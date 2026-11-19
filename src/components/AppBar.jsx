@@ -1,5 +1,5 @@
 import { ScrollView, StyleSheet, Pressable, View } from 'react-native';
-import { Link, useNavigate } from 'react-router-native';
+import { useNavigate } from 'react-router-native';
 import { useQuery } from '@apollo/client';
 import { useApolloClient } from '@apollo/client/react';
 
@@ -22,9 +22,16 @@ const styles = StyleSheet.create({
   },
 });
 
-const AppBarTab = ({ children, ...props }) => {
+// react-router-native v6's <Link> ignores a `component` prop and wraps its
+// children in a TouchableHighlight, which needs exactly one element child —
+// plain text crashes with "React.Children.only expected to receive a single
+// React element child". So tabs navigate themselves instead.
+const AppBarTab = ({ children, to, onPress, ...props }) => {
+  const navigate = useNavigate();
+  const handlePress = to ? () => navigate(to) : onPress;
+
   return (
-    <Pressable style={styles.tab} {...props}>
+    <Pressable style={styles.tab} onPress={handlePress} {...props}>
       <Text fontWeight="bold" color="white">
         {children}
       </Text>
@@ -51,20 +58,12 @@ const AppBar = () => {
   return (
     <View style={styles.container}>
       <ScrollView horizontal contentContainerStyle={styles.scrollView}>
-        <Link to="/" component={AppBarTab}>
-          Repositories
-        </Link>
-        {username && (
-          <Link to="/myreviews" component={AppBarTab}>
-            My reviews
-          </Link>
-        )}
+        <AppBarTab to="/">Repositories</AppBarTab>
+        {username && <AppBarTab to="/myreviews">My reviews</AppBarTab>}
         {username ? (
           <AppBarTab onPress={signOut}>Sign out</AppBarTab>
         ) : (
-          <Link to="/signin" component={AppBarTab}>
-            Sign in
-          </Link>
+          <AppBarTab to="/signin">Sign in</AppBarTab>
         )}
       </ScrollView>
     </View>
